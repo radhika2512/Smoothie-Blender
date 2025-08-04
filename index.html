@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smoothie Blender</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .ingredient-selector {
+            max-width: 300px;
+            margin: 0 auto 30px auto;
+            text-align: center;
+        }
+
+        .dropdown {
+            width: 100%;
+            padding: 15px;
+            border: 3px solid #dee2e6;
+            border-radius: 12px;
+            background: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .dropdown:hover {
+            border-color: #007bff;
+        }
+
+        .dropdown:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .selected-ingredients {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 12px;
+            min-height: 50px;
+            border: 2px dashed #2196f3;
+        }
+
+        .ingredient-tag {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 8px 12px;
+            margin: 4px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .ingredient-tag:hover {
+            background: #0056b3;
+        }
+
+        .main-section {
+            display: grid;
+            grid-template-columns: 1fr auto 200px;
+            gap: 50px;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .blender-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .blender {
+            width: 250px;
+            height: 450px;
+            position: relative;
+        }
+
+        .blender-jar {
+            width: 200px;
+            height: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 4px solid #2c3e50;
+            border-radius: 15px 15px 8px 8px;
+            position: absolute;
+            bottom: 100px;
+            left: 25px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .blender-jar-top {
+            width: 180px;
+            height: 25px;
+            background: #34495e;
+            border: 3px solid #2c3e50;
+            border-radius: 12px;
+            position: absolute;
+            top: -15px;
+            left: 10px;
+            z-index: 10;
+        }
+
+        .blender-jar-handle {
+            width: 30px;
+            height: 120px;
+            border: 4px solid #2c3e50;
+            border-left: none;
+            border-radius: 0 20px 20px 0;
+            position: absolute;
+            right: -20px;
+            top: 80px;
+            background: none;
+        }
+
+        .blender-base {
+            width: 250px;
+            height: 120px;
+            background: linear-gradient(to bottom, #95a5a6, #7f8c8d);
+            border: 4px solid #2c3e50;
+            border-radius: 20px;
+            position: absolute;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .jar-contents {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            transition: all 0.5s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 8px;
+        }
+
+        .ingredient-layer {
+            width: 100%;
+            min-height: 20px;
+            margin: 2px 0;
+            border-radius: 4px;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+        }
+
+        .blend-button {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+            position: relative;
+            z-index: 5;
+        }
+
+        .blend-button:hover {
+            background: linear-gradient(45deg, #c0392b, #a93226);
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .blend-button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .blending .blender-jar {
+            animation: blendShake 0.5s infinite;
+        }
+
+        @keyframes blendShake {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-4px) rotate(1deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(-3px) rotate(-1deg); }
+        }
+
+        .glass-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .glass {
+            width: 120px;
+            height: 180px;
+            border: 4px solid #2c3e50;
+            border-radius: 8px 8px 20px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-contents {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            transition: all 1.5s ease;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .pour-button {
+            padding: 15px 25px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .pour-button:hover {
+            background: linear-gradient(45deg, #2980b9, #1f618d);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .pour-button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .controls {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn-clear {
+            padding: 15px 30px;
+            background: linear-gradient(45dc, #e67e22, #d35400);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(230, 126, 34, 0.3);
+        }
+
+        .btn-clear:hover {
+            background: linear-gradient(45deg, #d35400, #ba4a00);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(230, 126, 34, 0.4);
+        }
+
+        .smoothie-info {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 15px;
+            border-left: 5px solid #3498db;
+            display: none;
+        }
+
+        .smoothie-info h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .smoothie-info p {
+            color: #34495e;
+            line-height: 1.6;
+        }
+
+        .flash-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            opacity: 0;
+            animation: flashInOut 4s ease-in-out forwards;
+            max-width: 500px;
+            line-height: 1.5;
+        }
+
+        @keyframes flashInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+
+        @media (max-width: 768px) {
+            .main-section {
+                grid-template-columns: 1fr auto 1fr;
+                gap: 15px;
+            }
+            
+            .blender {
+                width: 140px;
+                height: 280px;
+            }
+            
+            .blender-jar {
+                width: 120px;
+                height: 200px;
+                left: 10px;
+                bottom: 60px;
+            }
+            
+            .blender-jar-top {
+                width: 100px;
+                left: 10px;
+            }
+            
+            .blender-base {
+                width: 140px;
+                height: 80px;
+            }
+            
+            .blend-button {
+                width: 60px;
+                height: 60px;
+                font-size: 0.8em;
+            }
+            
+            .glass {
+                width: 80px;
+                height: 120px;
+            }
+            
+            .glass-contents {
+                border-radius: 0 0 12px 12px;
+            }
+            
+            .pour-button {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+            
+            .controls {
+                grid-column: 1 / -1;
+                margin-top: 20px;
+            }
+            
+            .ingredient-selector {
+                margin-bottom: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥤 Smoothie Blender</h1>
+        
+        <div class="ingredient-selector">
+            <select class="dropdown" id="ingredientDropdown">
+                <option value="">Add an ingredient...</option>
+                <optgroup label="🍓 Fruits">
+                    <option value="Strawberry|#ff6b6b">🍓 Strawberry</option>
+                    <option value="Banana|#f9ca24">🍌 Banana</option>
+                    <option value="Blueberry|#6c5ce7">🫐 Blueberry</option>
+                    <option value="Mango|#fdcb6e">🥭 Mango</option>
+                    <option value="Grape|#a29bfe">🍇 Grape</option>
+                    <option value="Raspberry|#fd79a8">🍇 Raspberry</option>
+                    <option value="Apple|#00b894">🍎 Apple</option>
+                    <option value="Pineapple|#ffeaa7">🍍 Pineapple</option>
+                </optgroup>
+                <optgroup label="🥬 Vegetables">
+                    <option value="Spinach|#00b894">🥬 Spinach</option>
+                    <option value="Kale|#00cec9">🥬 Kale</option>
+                    <option value="Beet|#e84393">🟣 Beet</option>
+                    <option value="Carrot|#e17055">🥕 Carrot</option>
+                    <option value="Ginger|#fdcb6e">🫚 Ginger</option>
+                    <option value="Cucumber|#55a3ff">🥒 Cucumber</option>
+                </optgroup>
+                <optgroup label="🥛 Liquids">
+                    <option value="Milk|#f8f9fa">🥛 Milk</option>
+                    <option value="Almond Milk|#dda15e">🥛 Almond Milk</option>
+                    <option value="Coconut Milk|#f4f3ee">🥥 Coconut Milk</option>
+                    <option value="Water|#74b9ff">💧 Water</option>
+                    <option value="Orange Juice|#ffd60a">🍊 Orange Juice</option>
+                    <option value="Oat Milk|#e17055">🌾 Oat Milk</option>
+                </optgroup>
+                <optgroup label="💪 Protein & Extras">
+                    <option value="Whey Protein|#8d99ae">💪 Whey Protein</option>
+                    <option value="Plant Protein|#2d3436">🌱 Plant Protein</option>
+                    <option value="Greek Yogurt|#dda15e">🍦 Greek Yogurt</option>
+                    <option value="Chia Seeds|#2d3436">⚫ Chia Seeds</option>
+                    <option value="Honey|#f9ca24">🍯 Honey</option>
+                    <option value="Peanut Butter|#e17055">🥜 Peanut Butter</option>
+                </optgroup>
+            </select>
+            <div class="selected-ingredients" id="selectedIngredients"></div>
+        </div>
+
+        <div class="main-section">
+            <div class="blender-container">
+                <div class="blender" id="blender">
+                    <div class="blender-jar">
+                        <div class="blender-jar-top"></div>
+                        <div class="jar-contents" id="jarContents"></div>
+                        <div class="blender-jar-handle"></div>
+                    </div>
+                    <div class="blender-base">
+                        <button class="blend-button" id="blendBtn" onclick="blendSmoothie()">BLEND</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size: 3em; color: #34495e;">→</div>
+
+            <div class="glass-section">
+                <div class="glass">
+                    <div class="glass-contents" id="glassContents"></div>
+                </div>
+                <button class="pour-button" id="pourBtn" onclick="pourSmoothie()" disabled>
+                    Pour 🥤
+                </button>
+            </div>
+
+            <div class="controls">
+                <button class="btn-clear" onclick="clearAll()">🗑️ Clear All</button>
+            </div>
+
+            <div class="smoothie-info" id="smoothieInfo">
+                <h3>Your Smoothie Recipe</h3>
+                <p id="smoothieDetails"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedIngredients = [];
+        let isBlended = false;
+        let isPoured = false;
+
+        // Initialize dropdown listener
+        document.getElementById('ingredientDropdown').addEventListener('change', function() {
+            addIngredient(this.value);
+            this.value = '';
+        });
+
+        function addIngredient(value) {
+            if (!value) return;
+
+            const [name, color] = value.split('|');
+            
+            // Check if ingredient already selected
+            if (selectedIngredients.some(ing => ing.name === name)) {
+                return;
+            }
+
+            const ingredient = { name, color };
+            selectedIngredients.push(ingredient);
+
+            // Add to display
+            const container = document.getElementById('selectedIngredients');
+            const tag = document.createElement('span');
+            tag.className = 'ingredient-tag';
+            tag.textContent = name;
+            tag.onclick = () => removeIngredient(name, tag);
+            container.appendChild(tag);
+
+            updateJarContents();
+        }
+
+        function removeIngredient(name, tagElement) {
+            selectedIngredients = selectedIngredients.filter(ing => ing.name !== name);
+            tagElement.remove();
+            updateJarContents();
+            
+            // Reset blend state if ingredients are removed
+            if (selectedIngredients.length === 0) {
+                isBlended = false;
+                document.getElementById('pourBtn').disabled = true;
+            }
+        }
+
+        function updateJarContents() {
+            const jarContents = document.getElementById('jarContents');
+            jarContents.innerHTML = '';
+
+            if (selectedIngredients.length === 0) {
+                jarContents.style.height = '0px';
+                return;
+            }
+
+            const totalHeight = Math.min(250, selectedIngredients.length * 30 + 30);
+            jarContents.style.height = totalHeight + 'px';
+
+            selectedIngredients.forEach((ingredient, index) => {
+                const layer = document.createElement('div');
+                layer.className = 'ingredient-layer';
+                layer.style.backgroundColor = ingredient.color;
+                layer.style.height = '25px';
+                layer.style.animationDelay = (index * 0.1) + 's';
+                jarContents.appendChild(layer);
+            });
+        }
+
+        function blendSmoothie() {
+            if (selectedIngredients.length === 0) {
+                alert('Please select some ingredients first!');
+                return;
+            }
+
+            const blendBtn = document.getElementById('blendBtn');
+            const blender = document.getElementById('blender');
+            
+            blendBtn.disabled = true;
+            blendBtn.textContent = 'BLENDING...';
+            blender.classList.add('blending');
+
+            setTimeout(() => {
+                // Create blended smoothie
+                const blendedColor = blendColors(selectedIngredients.map(ing => ing.color));
+                const jarContents = document.getElementById('jarContents');
+                
+                jarContents.innerHTML = '';
+                const blendedLayer = document.createElement('div');
+                blendedLayer.style.backgroundColor = blendedColor;
+                blendedLayer.style.height = '200px';
+                blendedLayer.style.borderRadius = '6px';
+                blendedLayer.style.width = '100%';
+                jarContents.appendChild(blendedLayer);
+
+                blender.classList.remove('blending');
+                blendBtn.textContent = 'BLENDED ✓';
+                blendBtn.style.background = '#27ae60';
+                
+                isBlended = true;
+                document.getElementById('pourBtn').disabled = false;
+                
+                showSmoothieInfo();
+            }, 3000);
+        }
+
+        function pourSmoothie() {
+            if (!isBlended) return;
+
+            const jarContents = document.getElementById('jarContents');
+            const glassContents = document.getElementById('glassContents');
+            const pourBtn = document.getElementById('pourBtn');
+            
+            pourBtn.disabled = true;
+            pourBtn.textContent = 'Pouring...';
+
+            // Get the blended color
+            const blendedColor = jarContents.firstChild.style.backgroundColor;
+            
+            // Animate pouring
+            let jarHeight = 200;
+            let glassHeight = 0;
+            
+            const pourInterval = setInterval(() => {
+                jarHeight -= 6;
+                glassHeight += 5;
+                
+                jarContents.style.height = Math.max(0, jarHeight) + 'px';
+                glassContents.style.height = Math.min(160, glassHeight) + 'px';
+                glassContents.style.backgroundColor = blendedColor;
+                
+                if (jarHeight <= 0 || glassHeight >= 160) {
+                    clearInterval(pourInterval);
+                    pourBtn.textContent = 'Poured ✓';
+                    pourBtn.style.background = '#27ae60';
+                    isPoured = true;
+                    
+                    // Show flash message
+                    showFlashMessage();
+                }
+            }, 50);
+        }
+
+        function clearAll() {
+            selectedIngredients = [];
+            isBlended = false;
+            isPoured = false;
+            
+            // Clear ingredient tags
+            document.getElementById('selectedIngredients').innerHTML = '';
+            
+            // Reset jar and glass
+            document.getElementById('jarContents').innerHTML = '';
+            document.getElementById('jarContents').style.height = '0px';
+            document.getElementById('glassContents').style.height = '0px';
+            
+            // Reset buttons
+            const blendBtn = document.getElementById('blendBtn');
+            const pourBtn = document.getElementById('pourBtn');
+            
+            blendBtn.disabled = false;
+            blendBtn.textContent = 'BLEND';
+            blendBtn.style.background = 'linear-gradient(45deg, #e74c3c, #c0392b)';
+            
+            pourBtn.disabled = true;
+            pourBtn.textContent = 'Pour 🥤';
+            pourBtn.style.background = 'linear-gradient(45deg, #3498db, #2980b9)';
+            
+            // Hide smoothie info
+            document.getElementById('smoothieInfo').style.display = 'none';
+        }
+
+        function blendColors(colors) {
+            if (colors.length === 0) return '#ffffff';
+            if (colors.length === 1) return colors[0];
+
+            let r = 0, g = 0, b = 0;
+            
+            colors.forEach(color => {
+                const rgb = hexToRgb(color);
+                r += rgb.r;
+                g += rgb.g;
+                b += rgb.b;
+            });
+
+            r = Math.round(r / colors.length);
+            g = Math.round(g / colors.length);
+            b = Math.round(b / colors.length);
+
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : {r: 255, g: 255, b: 255};
+        }
+
+        function showSmoothieInfo() {
+            const info = document.getElementById('smoothieInfo');
+            const details = document.getElementById('smoothieDetails');
+            
+            let recipe = '<strong>Your delicious smoothie contains:</strong><br><br>';
+            recipe += selectedIngredients.map(ing => ing.name).join(', ');
+            recipe += '<br><br><em>Enjoy your nutritious and delicious smoothie! 🥤</em>';
+
+            details.innerHTML = recipe;
+            info.style.display = 'block';
+        }
+
+        function showFlashMessage() {
+            const flashMessage = document.createElement('div');
+            flashMessage.className = 'flash-message';
+            flashMessage.innerHTML = `Everyone raises a toast with alcohol — you do it with a smoothie!<br><br>Here's to a happy gut and a healthier you! 🥤`;
+  
+            document.body.appendChild(flashMessage);
+            
+            // Remove the element after animation completes
+            setTimeout(() => {
+                if (flashMessage.parentNode) {
+                    flashMessage.parentNode.removeChild(flashMessage);
+                }
+            }, 4000);
+        }
+    </script>
+</body>
+</html> 
